@@ -20,11 +20,16 @@ def main():
     else:
         proxy = None
 
+    if 'BLOCK_IMAGES' in os.environ:
+        block_images = os.environ['BLOCK_IMAGES'] == 'true'
+    else:
+        block_images = True
+
     launch_server(
         headless="virtual",
         geoip=True,
         humanize=True,
-        block_images=True,
+        block_images=block_images,
         proxy=proxy,
         port=1234,
         ws_path='test'

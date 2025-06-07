@@ -12,8 +12,6 @@ services:
       - PROXY_SERVER=${PROXY_SERVER:-} # Optional proxy server
       - PROXY_USERNAME=${PROXY_USERNAME:-} # Optional proxy username
       - PROXY_PASSWORD=${PROXY_PASSWORD:-} # Optional proxy password
-    volumes:
-      - ./main.py:/app/main.py # Mount the main.py file
     # Ensure the container has enough resources for browser automation
     deploy:
       resources:
