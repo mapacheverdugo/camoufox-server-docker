@@ -49,11 +49,18 @@ ENV DISPLAY=:99
 # Expose WebSocket port
 EXPOSE 1234
 
-# Copy application code
+# Copy application code and entrypoint script
 COPY main.py .
+COPY entrypoint.sh .
+
+# Make the entrypoint script executable
+RUN chmod +x entrypoint.sh
 
 # Switch to non-root user
 USER appuser
+
+# Set the entrypoint
+ENTRYPOINT ["./entrypoint.sh"]
 
 # Run the application
 CMD ["python3", "main.py"]
