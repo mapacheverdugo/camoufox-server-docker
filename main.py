@@ -3,7 +3,7 @@ import os
 
 def main():
     launch_server(
-        headless="virtual",
+        headless=False,
         humanize=True,
         port=1234,
         ws_path='test',
