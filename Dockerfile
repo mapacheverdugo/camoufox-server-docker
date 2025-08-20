@@ -39,7 +39,7 @@ WORKDIR /app
 # 3) Upgrade pip and install Camoufox[geoip]
 #
 RUN python3 -m pip install --upgrade pip \
- && python3 -m pip install -U camoufox[geoip]
+ && python3 -m pip install -U camoufox[geoip] "playwright==1.52.0"
 
 RUN python3 -m camoufox fetch
 
