@@ -35,37 +35,38 @@ RUN ln -sf /usr/bin/python3.12 /usr/bin/python3 && \
     ln -sf /usr/bin/pip3.12 /usr/bin/pip3
 
 #
-# 3) Instalar paquetes de Python y descargar datos como ROOT
-#
-RUN python3 -m pip install --upgrade pip --no-cache-dir && \
-    python3 -m pip install -U camoufox[geoip] "playwright==1.52.0" --no-cache-dir
-
-# --- ¡CAMBIO CLAVE! ---
-# Forzamos los permisos de escritura en el directorio de destino de la librería
-# ANTES de intentar ejecutar el comando de descarga.
-RUN chmod -R 777 /usr/local/lib/python3.12/site-packages/camoufox
-
-# Ahora, ejecutamos el fetch como ROOT. Con los permisos explícitamente establecidos,
-# la escritura del archivo .mmdb no debería fallar.
-RUN python3 -m camoufox fetch
-
-#
-# 4) Preparar el entorno para el usuario no-root
+# 3) Preparar el entorno para el usuario no-root
 #
 # Crear el usuario no-root
 RUN useradd -m -s /bin/bash appuser
 
-# Cambiar al directorio de la aplicación
-WORKDIR /app
+# Cambiar al usuario no-root
+USER appuser
 
-# Copiar el código de la aplicación y darle permisos al usuario no-root
+# --- ¡CAMBIO CLAVE! ---
+# Añadimos el directorio local del usuario al PATH del sistema.
+ENV PATH="/home/appuser/.local/bin:${PATH}"
+
+#
+# 4) Instalar paquetes de Python y descargar datos como 'appuser'
+#
+# Actualizamos pip e instalamos los paquetes con el flag --user.
+# Esto los instala en el directorio home del usuario, evitando problemas de permisos.
+RUN python3 -m pip install --upgrade pip --user && \
+    python3 -m pip install -U camoufox[geoip] "playwright==1.52.0" --user
+
+# Ahora, ejecutamos el fetch como 'appuser'. Los datos se guardarán en el
+# directorio home del usuario, donde tiene plenos permisos.
+RUN python3 -m camoufox fetch
+
+#
+# 5) Configuración final de la aplicación
+#
+WORKDIR /app
 COPY --chown=appuser:appuser main.py .
 COPY --chown=appuser:appuser entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
-#
-# 5) Configuración final y cambio a usuario no-root
-#
 ENV DISPLAY=:99
 # Port will be exposed dynamically via docker-compose
 

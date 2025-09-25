@@ -1,8 +1,29 @@
 #!/bin/bash
 echo "ENTRYPOINT START: $(date +%s.%N)"
 
-# Inicia el servidor Xvfb en el display :99 y en segundo plano (&)
-Xvfb :99 -screen 0 1280x720x16 &
+# Function to cleanup Xvfb processes
+cleanup_xvfb() {
+    echo "Cleaning up Xvfb processes..."
+    pkill -f "Xvfb :99" 2>/dev/null || true
+    rm -f /tmp/.X99-lock
+}
+
+# Set up trap to cleanup on exit
+trap cleanup_xvfb EXIT
+
+# Clean up any existing X11 lock files and processes
+cleanup_xvfb
+
+# Check if Xvfb is already running on display :99
+if ! pgrep -f "Xvfb :99" > /dev/null; then
+    echo "Starting Xvfb server on display :99..."
+    # Inicia el servidor Xvfb en el display :99 y en segundo plano (&)
+    Xvfb :99 -screen 0 1280x720x16 &
+    # Give Xvfb time to start
+    sleep 2
+else
+    echo "Xvfb server already running on display :99"
+fi
 
 # Get port from environment variable, default to 1234
 PORT=${PORT:-1234}
