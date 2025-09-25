@@ -28,6 +28,7 @@ RUN dnf update -y && dnf install -y \
     cups-libs \
     amazon-efs-utils \
     socat \
+    procps \
     && dnf clean all
 
 # Crear symlinks para python
@@ -39,6 +40,9 @@ RUN ln -sf /usr/bin/python3.12 /usr/bin/python3 && \
 #
 # Crear el usuario no-root
 RUN useradd -m -s /bin/bash appuser
+
+# Create X11 directory with proper permissions
+RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
 
 # Cambiar al usuario no-root
 USER appuser

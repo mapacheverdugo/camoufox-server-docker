@@ -1,18 +1,19 @@
 #!/bin/bash
 echo "ENTRYPOINT START: $(date +%s.%N)"
 
-# Function to cleanup Xvfb processes
-cleanup_xvfb() {
-    echo "Cleaning up Xvfb processes..."
+# Function to cleanup processes
+cleanup_processes() {
+    echo "Cleaning up processes..."
     pkill -f "Xvfb :99" 2>/dev/null || true
+    pkill -f "socat" 2>/dev/null || true
     rm -f /tmp/.X99-lock
 }
 
 # Set up trap to cleanup on exit
-trap cleanup_xvfb EXIT
+trap cleanup_processes EXIT
 
 # Clean up any existing X11 lock files and processes
-cleanup_xvfb
+cleanup_processes
 
 # Check if Xvfb is already running on display :99
 if ! pgrep -f "Xvfb :99" > /dev/null; then
@@ -27,11 +28,7 @@ fi
 
 # Get port from environment variable, default to 1234
 PORT=${PORT:-1234}
-echo "Iniciando proxy TCP en el puerto $PORT..."
-socat TCP4-LISTEN:$PORT,fork TCP:127.0.0.1:$PORT &
-
-# Da un pequeño respiro para que el proxy se inicie
-sleep 1
+echo "Using port $PORT for the server..."
 
 if [ -n "$CAMOUFOX_DATA_PATH" ]; then
     echo "CAMOUFOX_DATA_PATH detectado. Copiando datos desde EFS..."
