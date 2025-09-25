@@ -1,10 +1,13 @@
+# Dockerfile
+# ACTUALIZADO: Con una solución de permisos explícita y forzada para resolver el error de build.
+
 #
 # 1) Base: Python 3.12 on Amazon Linux 2023
 #
 FROM amazonlinux:2023
 
 #
-# 2) Install Python and system dependencies
+# 2) Instalar dependencias del sistema como ROOT
 #
 RUN dnf update -y && dnf install -y \
     python3.12 \
@@ -23,44 +26,48 @@ RUN dnf update -y && dnf install -y \
     alsa-lib \
     pango \
     cups-libs \
+    amazon-efs-utils \
+    socat \
     && dnf clean all
 
-# Create symlinks for python3 and pip3
+# Crear symlinks para python
 RUN ln -sf /usr/bin/python3.12 /usr/bin/python3 && \
     ln -sf /usr/bin/pip3.12 /usr/bin/pip3
 
-# Create a non-root user
-RUN useradd -m -s /bin/bash appuser
-
-# Set working directory
-WORKDIR /app
-
 #
-# 3) Upgrade pip and install Camoufox[geoip]
+# 3) Instalar paquetes de Python y descargar datos como ROOT
 #
-RUN python3 -m pip install --upgrade pip \
- && python3 -m pip install -U camoufox[geoip] "playwright==1.52.0"
+RUN python3 -m pip install --upgrade pip --no-cache-dir && \
+    python3 -m pip install -U camoufox[geoip] "playwright==1.52.0" --no-cache-dir
 
+# --- ¡CAMBIO CLAVE! ---
+# Forzamos los permisos de escritura en el directorio de destino de la librería
+# ANTES de intentar ejecutar el comando de descarga.
+RUN chmod -R 777 /usr/local/lib/python3.12/site-packages/camoufox
+
+# Ahora, ejecutamos el fetch como ROOT. Con los permisos explícitamente establecidos,
+# la escritura del archivo .mmdb no debería fallar.
 RUN python3 -m camoufox fetch
 
-# Set display environment variable
-ENV DISPLAY=:99
+#
+# 4) Preparar el entorno para el usuario no-root
+#
+# Crear el usuario no-root
+RUN useradd -m -s /bin/bash appuser
 
-# Expose WebSocket port
-EXPOSE 1234
+# Cambiar al directorio de la aplicación
+WORKDIR /app
 
-# Copy application code and entrypoint script
-COPY main.py .
-COPY entrypoint.sh .
-
-# Make the entrypoint script executable
+# Copiar el código de la aplicación y darle permisos al usuario no-root
+COPY --chown=appuser:appuser main.py .
+COPY --chown=appuser:appuser entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
-# Switch to non-root user
-USER appuser
+#
+# 5) Configuración final y cambio a usuario no-root
+#
+ENV DISPLAY=:99
+# Port will be exposed dynamically via docker-compose
 
-# Set the entrypoint
 ENTRYPOINT ["./entrypoint.sh"]
-
-# Run the application
 CMD ["python3", "main.py"]
