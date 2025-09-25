@@ -6,10 +6,9 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "${PORT:-1234}:${PORT:-1234}" # WebSocket port
+      - "1234:1234" # WebSocket port
     environment:
       - DISPLAY=:99
-      - PORT=${PORT:-1234} # WebSocket port
       - PROXY_SERVER=${PROXY_SERVER:-} # Optional proxy server
       - PROXY_USERNAME=${PROXY_USERNAME:-} # Optional proxy username
       - PROXY_PASSWORD=${PROXY_PASSWORD:-} # Optional proxy password
@@ -29,7 +28,7 @@ services:
           "CMD",
           "python3",
           "-c",
-          "import socket, os; socket.socket().connect(('localhost', int(os.environ.get('PORT', 1234))))",
+          "import socket; socket.socket().connect(('localhost', 1234))",
         ]
       interval: 30s
       timeout: 10s

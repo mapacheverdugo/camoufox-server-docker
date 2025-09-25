@@ -27,15 +27,12 @@ def main():
     else:
         proxy = None
 
-    # Get port from environment variable, default to 1234
-    port = int(os.environ.get('PORT', 1234))
-
     print(f"MAIN.PY LAUNCH SERVER: {time.time()}")
     launch_server(
         geoip=True,
         humanize=True,
         proxy=proxy,
-        port=port,
+        port=1234,
         ws_path='/',
     )
 
