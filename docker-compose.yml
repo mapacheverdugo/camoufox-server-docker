@@ -1,35 +1,22 @@
-version: "3.8"
-
 services:
-  project-pan:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  camoufox-server:
+    image: ghcr.io/mapacheverdugo/camoufox-server:latest
     ports:
-      - "${EXPOSED_PORT:-1234}:1234" # WebSocket port
+      - "${EXPOSED_PORT:-1234}:1234"
     environment:
       - DISPLAY=:99
-      - PROXY_SERVER=${PROXY_SERVER:-} # Optional proxy server
-      - PROXY_USERNAME=${PROXY_USERNAME:-} # Optional proxy username
-      - PROXY_PASSWORD=${PROXY_PASSWORD:-} # Optional proxy password
-    # Ensure the container has enough resources for browser automation
+      - PROXY_SERVER=${PROXY_SERVER:-}
+      - PROXY_USERNAME=${PROXY_USERNAME:-}
+      - PROXY_PASSWORD=${PROXY_PASSWORD:-}
     deploy:
       resources:
         limits:
           memory: 2G
         reservations:
           memory: 1G
-    # Restart policy in case of failures
     restart: unless-stopped
-    # Health check to ensure the service is running
     healthcheck:
-      test:
-        [
-          "CMD",
-          "python3",
-          "-c",
-          "import socket; socket.socket().connect(('localhost', 1234))",
-        ]
+      test: ["CMD", "python3", "-c", "import socket; socket.socket().connect(('localhost', 1234))"]
       interval: 30s
       timeout: 10s
       retries: 3
