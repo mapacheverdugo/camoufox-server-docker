@@ -1,20 +1,4 @@
-version: "3.8"
-
 services:
-<<<<<<< Updated upstream
-  project-pan:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "${EXPOSED_PORT:-1234}:1234" # WebSocket port
-    environment:
-      - DISPLAY=:99
-      - PROXY_SERVER=${PROXY_SERVER:-} # Optional proxy server
-      - PROXY_USERNAME=${PROXY_USERNAME:-} # Optional proxy username
-      - PROXY_PASSWORD=${PROXY_PASSWORD:-} # Optional proxy password
-    # Ensure the container has enough resources for browser automation
-=======
   camoufox-server:
     image: ghcr.io/mapacheverdugo/camoufox-server:latest
     container_name: camoufox-server
@@ -35,35 +19,19 @@ services:
       PROXY_SERVER: "${PROXY_SERVER:-}"
       PROXY_USERNAME: "${PROXY_USERNAME:-}"
       PROXY_PASSWORD: "${PROXY_PASSWORD:-}"
->>>>>>> Stashed changes
     deploy:
       resources:
         limits:
           memory: ${MEM_LIMIT:-2G}
         reservations:
-<<<<<<< Updated upstream
-          memory: 1G
-    # Restart policy in case of failures
-=======
           memory: ${MEM_RESERVATION:-1G}
->>>>>>> Stashed changes
     restart: unless-stopped
-    # Health check to ensure the service is running
     healthcheck:
       test:
-<<<<<<< Updated upstream
-        [
-          "CMD",
-          "python3",
-          "-c",
-          "import socket; socket.socket().connect(('localhost', 1234))",
-        ]
-=======
         - "CMD"
         - "python3"
         - "-c"
         - "import os, socket; socket.socket().connect(('localhost', int(os.environ.get('PORT','1234'))))"
->>>>>>> Stashed changes
       interval: 30s
       timeout: 10s
       retries: 3
