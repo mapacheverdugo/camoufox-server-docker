@@ -1,28 +1,39 @@
 #!/bin/bash
 set -e
 
-# Valores por defecto si no vienen del entorno
+# Defaults if not provided via environment
+: "${ENABLE_XVFB:=true}"
 : "${DISPLAY:=:99}"
 : "${SCREEN_WIDTH:=1280}"
 : "${SCREEN_HEIGHT:=720}"
 : "${SCREEN_DEPTH:=16}"
 
-# Limpieza de un Xvfb previo si existiera (útil al reiniciar el contenedor)
-DISPLAY_NUM="${DISPLAY#:}"
-LOCK_FILE="/tmp/.X${DISPLAY_NUM}-lock"
-if [ -f "$LOCK_FILE" ]; then
-    rm -f "$LOCK_FILE" "/tmp/.X11-unix/X${DISPLAY_NUM}" 2>/dev/null || true
-fi
+case "${ENABLE_XVFB,,}" in
+    1|true|yes|on)
+        # Clean up a previous Xvfb lockfile if present (useful on container restart)
+        DISPLAY_NUM="${DISPLAY#:}"
+        LOCK_FILE="/tmp/.X${DISPLAY_NUM}-lock"
+        if [ -f "$LOCK_FILE" ]; then
+            rm -f "$LOCK_FILE" "/tmp/.X11-unix/X${DISPLAY_NUM}" 2>/dev/null || true
+        fi
 
-# Iniciar Xvfb en background
-Xvfb "$DISPLAY" -screen 0 "${SCREEN_WIDTH}x${SCREEN_HEIGHT}x${SCREEN_DEPTH}" &
-XVFB_PID=$!
+        # Start Xvfb in the background
+        Xvfb "$DISPLAY" -screen 0 "${SCREEN_WIDTH}x${SCREEN_HEIGHT}x${SCREEN_DEPTH}" &
+        XVFB_PID=$!
 
-# Reenvío de señales para que Xvfb termine limpio al detener el contenedor
-trap 'kill -TERM "$XVFB_PID" 2>/dev/null || true' TERM INT
+        # Forward signals so Xvfb terminates cleanly when the container stops
+        trap 'kill -TERM "$XVFB_PID" 2>/dev/null || true' TERM INT
 
-# Pequeña espera para que el display esté disponible
-sleep 1
+        # Small wait so the display is ready before the main process starts
+        sleep 1
+        ;;
+    *)
+        echo "ENABLE_XVFB=${ENABLE_XVFB} -> skipping Xvfb startup"
+        # Camoufox will need to run headless when no display is available;
+        # main.py reads ENABLE_XVFB and forces headless mode in that case.
+        unset DISPLAY
+        ;;
+esac
 
-# Ejecutar el comando principal
+# Run the main command
 exec "$@"

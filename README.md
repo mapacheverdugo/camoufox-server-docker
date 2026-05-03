@@ -1,121 +1,128 @@
 # camoufox-server-docker
 
-Imagen Docker que ejecuta [Camoufox](https://github.com/daijro/camoufox) como servidor WebSocket compatible con Playwright, dentro de un display virtual (Xvfb). Pensado para correr de forma headless en un homelab (TrueNAS / Portainer / cualquier host Docker) y conectarse remotamente desde scripts Playwright.
+Docker image that runs [Camoufox](https://github.com/daijro/camoufox) as a Playwright-compatible WebSocket server inside a virtual display (Xvfb). Designed to run headless on a homelab (TrueNAS / Portainer / any Docker host) and be reached remotely from Playwright scripts.
 
-La imagen se publica automáticamente en GitHub Container Registry:
-
-```
-ghcr.io/mapacheverdugo/camoufox-server:latest
-```
+The image is built locally from the `Dockerfile` in this repo (it is not pulled from any registry).
 
 ---
 
-## Características
+## Features
 
-- Camoufox + Playwright corriendo como usuario no-root.
-- Display virtual con `Xvfb` (resolución configurable).
-- Endpoint WebSocket Playwright en `ws://<host>:<puerto>/`.
-- Proxy upstream opcional (con o sin autenticación).
-- Healthcheck integrado.
-- Versión de Playwright / Camoufox parametrizable en el build (por defecto la última disponible).
+- Camoufox + Playwright running as a non-root user.
+- Virtual display via `Xvfb` (configurable resolution).
+- Playwright WebSocket endpoint at `ws://<host>:<port>/`.
+- Optional upstream proxy (with or without authentication).
+- Built-in healthcheck.
+- Playwright / Camoufox versions are parameterized at build time (defaults to latest).
 
 ---
 
-## Despliegue rápido en Portainer (TrueNAS u otro)
+## Quick deploy on Portainer (TrueNAS or similar)
 
-1. En Portainer ve a **Stacks → Add stack**.
-2. Pegá el contenido de [`docker-compose.yml`](./docker-compose.yml) (o usá el método "Repository" apuntando a este repo).
-3. En la sección **Environment variables** agregá las que necesites del archivo [`.env.example`](./.env.example). Las únicas comunes a tocar:
-   - `EXPOSED_PORT` — puerto en el TrueNAS donde querés exponer el servicio.
-   - `PROXY_SERVER`, `PROXY_USERNAME`, `PROXY_PASSWORD` — si querés ruta a través de un proxy.
-4. **Deploy the stack**.
+Because the compose file uses `build:` (no pre-built image is pulled), Portainer needs access to the `Dockerfile`. The recommended way is to deploy the stack from the Git repository:
 
-Una vez levantado, el servidor escucha en `ws://<ip-truenas>:<EXPOSED_PORT>/`.
+1. In Portainer go to **Stacks → Add stack**.
+2. Pick the **Repository** method and point it at this repo (`main` branch).
+3. Leave `docker-compose.yml` as the Compose path.
+4. Under **Environment variables** add the ones you need from [`.env.example`](./.env.example). The most common to tweak:
+   - `EXPOSED_PORT` — host port where the service will be exposed on TrueNAS.
+   - `PROXY_SERVER`, `PROXY_USERNAME`, `PROXY_PASSWORD` — optional upstream proxy.
+   - `PLAYWRIGHT_VERSION` / `CAMOUFOX_VERSION` — optional, empty = latest.
+5. **Deploy the stack**. Portainer will build the image on the host.
 
-### Despliegue con `docker compose` directo
+Once it is up, the server listens on `ws://<truenas-ip>:<EXPOSED_PORT>/`.
+
+> The "Web editor" method (paste the YAML) **does not work** with `build:` because Portainer has no file context. Use Repository or Upload instead.
+
+### Deploy with `docker compose` directly
 
 ```bash
 cp .env.example .env
-# editá .env si querés
-docker compose up -d
+# edit .env if you want to
+docker compose up -d --build
 ```
 
 ---
 
-## Variables de entorno
+## Environment variables
 
-Todas son opcionales — los valores por defecto están entre paréntesis.
+All variables are optional — defaults are shown in parentheses.
 
-### Servidor
+### Server
 
-| Variable        | Default | Descripción                                                                |
-| --------------- | ------- | -------------------------------------------------------------------------- |
-| `EXPOSED_PORT`  | `1234`  | Puerto publicado en el host. Solo se usa en el `docker-compose.yml`.       |
-| `PORT`          | `1234`  | Puerto interno donde escucha Camoufox dentro del contenedor.               |
-| `WS_PATH`       | `/`     | Path del endpoint WebSocket.                                               |
-| `GEOIP`         | `true`  | Habilita la base GeoIP de Camoufox (requiere el extra `[geoip]`).          |
-| `HUMANIZE`      | `true`  | Habilita el comportamiento "humanizado" de Camoufox.                       |
+| Variable        | Default | Description                                                              |
+| --------------- | ------- | ------------------------------------------------------------------------ |
+| `EXPOSED_PORT`  | `1234`  | Port published on the host. Only consumed by `docker-compose.yml`.       |
+| `PORT`          | `1234`  | Internal port Camoufox listens on inside the container.                  |
+| `WS_PATH`       | `/`     | Path of the WebSocket endpoint.                                          |
+| `GEOIP`         | `true`  | Enable Camoufox's GeoIP database (requires the `[geoip]` extra).         |
+| `HUMANIZE`      | `true`  | Enable Camoufox's humanized behavior.                                    |
 
-### Display virtual
+### Virtual display
 
-| Variable        | Default | Descripción                                  |
-| --------------- | ------- | -------------------------------------------- |
-| `SCREEN_WIDTH`  | `1280`  | Ancho del display Xvfb.                      |
-| `SCREEN_HEIGHT` | `720`   | Alto del display Xvfb.                       |
-| `SCREEN_DEPTH`  | `16`    | Profundidad de color (8/16/24).              |
-| `DISPLAY`       | `:99`   | Display X que usa Camoufox. Normalmente no hace falta cambiarlo. |
+| Variable        | Default | Description                                              |
+| --------------- | ------- | -------------------------------------------------------- |
+| `ENABLE_XVFB`   | `true`  | Start Xvfb inside the container. Set to `false` to skip Xvfb and run Camoufox headless (the other `SCREEN_*` / `DISPLAY` variables are then ignored). |
+| `SCREEN_WIDTH`  | `1280`  | Xvfb display width.                                      |
+| `SCREEN_HEIGHT` | `720`   | Xvfb display height.                                     |
+| `SCREEN_DEPTH`  | `16`    | Color depth (8/16/24).                                   |
+| `DISPLAY`       | `:99`   | X display Camoufox attaches to. You usually don't need to change this. |
 
-### Proxy upstream (opcional)
+### Upstream proxy (optional)
 
-| Variable         | Default | Descripción                                         |
-| ---------------- | ------- | --------------------------------------------------- |
-| `PROXY_SERVER`   | _vacío_ | URL del proxy (`http://...` o `socks5://...`).      |
-| `PROXY_USERNAME` | _vacío_ | Usuario del proxy. Solo se aplica si los 3 están.   |
-| `PROXY_PASSWORD` | _vacío_ | Password del proxy. Solo se aplica si los 3 están.  |
+| Variable         | Default | Description                                              |
+| ---------------- | ------- | -------------------------------------------------------- |
+| `PROXY_SERVER`   | _empty_ | Proxy URL (`http://...` or `socks5://...`).              |
+| `PROXY_USERNAME` | _empty_ | Proxy username. Only applied if all three are set.       |
+| `PROXY_PASSWORD` | _empty_ | Proxy password. Only applied if all three are set.       |
 
-> Si solo definís `PROXY_SERVER` se usa el proxy sin autenticación. Si definís los tres, se envían las credenciales.
+> If only `PROXY_SERVER` is defined, the proxy is used without authentication. If all three are defined, credentials are sent.
 
-### Recursos
+### Resources
 
-| Variable          | Default | Descripción                              |
+| Variable          | Default | Description                              |
 | ----------------- | ------- | ---------------------------------------- |
-| `MEM_LIMIT`       | `2G`    | Límite duro de memoria del contenedor.   |
-| `MEM_RESERVATION` | `1G`    | Reserva de memoria.                      |
+| `MEM_LIMIT`       | `2G`    | Hard memory limit for the container.     |
+| `MEM_RESERVATION` | `1G`    | Soft memory reservation.                 |
 
 ---
 
-## Build args (al compilar la imagen)
+## Build args
 
-Si querés _fijar_ versiones específicas de las dependencias, podés pasar build args. Si los dejás vacíos, se instala la última versión disponible en PyPI.
+If you want to _pin_ specific dependency versions you can pass build args. Leaving them empty installs the latest version available on PyPI.
 
-| Build arg            | Default        | Descripción                                  |
-| -------------------- | -------------- | -------------------------------------------- |
-| `PLAYWRIGHT_VERSION` | _(última)_     | Fija la versión de `playwright` (ej. `1.52.0`). |
-| `CAMOUFOX_VERSION`   | _(última)_     | Fija la versión de `camoufox`.               |
+| Build arg            | Default     | Description                                   |
+| -------------------- | ----------- | --------------------------------------------- |
+| `PLAYWRIGHT_VERSION` | _(latest)_  | Pin the `playwright` version (e.g. `1.52.0`). |
+| `CAMOUFOX_VERSION`   | _(latest)_  | Pin the `camoufox` version.                   |
 
-### Ejemplos
+These are wired into `docker-compose.yml`, so you can also set them as environment variables on the stack and they will be passed to the build:
 
 ```bash
-# Última versión (default)
+PLAYWRIGHT_VERSION=1.52.0 CAMOUFOX_VERSION=0.4.11 docker compose build
+```
+
+Or with `docker build` directly:
+
+```bash
+# Latest (default)
 docker build -t camoufox-server .
 
-# Fijando versiones
+# Pinned versions
 docker build \
   --build-arg PLAYWRIGHT_VERSION=1.52.0 \
   --build-arg CAMOUFOX_VERSION=0.4.11 \
   -t camoufox-server:pinned .
 ```
 
-Desde GitHub Actions, podés usar **Run workflow** (`workflow_dispatch`) para pasar los inputs `playwright_version` y `camoufox_version`. Si los dejás en blanco, se publica con las últimas.
-
 ---
 
-## Cómo conectarse desde Playwright
+## How to connect from Playwright
 
 ```python
 from playwright.sync_api import sync_playwright
 
-WS = "ws://192.168.1.50:1234/"  # IP del TrueNAS y EXPOSED_PORT
+WS = "ws://192.168.1.50:1234/"  # TrueNAS IP and EXPOSED_PORT
 
 with sync_playwright() as p:
     browser = p.firefox.connect(WS)
@@ -138,23 +145,22 @@ await browser.close();
 
 ---
 
-## Estructura del repo
+## Repo layout
 
 ```
 .
-├── Dockerfile             # Imagen base AmazonLinux 2023 + Python 3.12 + Camoufox
-├── docker-compose.yml     # Stack listo para Portainer/TrueNAS
-├── entrypoint.sh          # Levanta Xvfb y delega al CMD
-├── main.py                # Lanza Camoufox en modo servidor WS
-├── .env.example           # Plantilla de variables de entorno
-└── .github/workflows/     # CI: build y push a GHCR
+├── Dockerfile             # AmazonLinux 2023 + Python 3.12 + Camoufox base image
+├── docker-compose.yml     # Stack ready for Portainer / TrueNAS
+├── entrypoint.sh          # Starts Xvfb and delegates to CMD
+├── main.py                # Launches Camoufox in WS server mode
+└── .env.example           # Environment variables template
 ```
 
 ---
 
 ## Troubleshooting
 
-- **El healthcheck falla** — verificá que `PORT` coincida en el contenedor y en el `docker-compose.yml`.
-- **`connect ECONNREFUSED`** — el contenedor todavía está iniciando (el primer arranque baja el binario Camoufox; suele tardar ~30 s).
-- **Memoria** — con páginas pesadas puede hacer falta subir `MEM_LIMIT` a 3-4 GB.
-- **Reinicios infinitos** — revisá los logs (`docker logs camoufox-server`); típicamente es un proxy mal configurado o falta de RAM.
+- **Healthcheck keeps failing** — make sure `PORT` matches between the container and the `docker-compose.yml`.
+- **`connect ECONNREFUSED`** — the container is still starting (the first boot downloads the Camoufox binary; usually ~30 s).
+- **Memory** — heavy pages may need `MEM_LIMIT` raised to 3-4 GB.
+- **Restart loop** — check `docker logs camoufox-server`; it is usually a misconfigured proxy or insufficient RAM.

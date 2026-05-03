@@ -1,11 +1,11 @@
 FROM amazonlinux:2023
 
-# Build args - pueden sobreescribirse con --build-arg.
-# Si están vacíos se instala la última versión disponible en PyPI.
+# Build args - override with --build-arg.
+# If empty, the latest version available on PyPI is installed.
 ARG PLAYWRIGHT_VERSION=
 ARG CAMOUFOX_VERSION=
 
-# Dependencias del sistema necesarias para Camoufox/Playwright + Xvfb
+# System dependencies required by Camoufox/Playwright + Xvfb
 RUN dnf update -y && dnf install -y \
     python3.12 \
     python3.12-pip \
@@ -27,17 +27,17 @@ RUN dnf update -y && dnf install -y \
     && dnf clean all \
     && rm -rf /var/cache/dnf
 
-# Symlinks para que `python3` y `pip3` apunten a 3.12
+# Make `python3` and `pip3` point to 3.12
 RUN ln -sf /usr/bin/python3.12 /usr/bin/python3 && \
     ln -sf /usr/bin/pip3.12 /usr/bin/pip3
 
-# Usuario no-root
+# Non-root user
 RUN useradd -m -s /bin/bash appuser
 USER appuser
 ENV PATH="/home/appuser/.local/bin:${PATH}"
 
-# Instalar paquetes Python como appuser (--user evita problemas de permisos).
-# Si las versiones están vacías se usa la última.
+# Install Python packages as appuser (--user avoids permission issues).
+# If versions are empty, latest is installed.
 RUN python3 -m pip install --upgrade pip --user && \
     if [ -n "$PLAYWRIGHT_VERSION" ]; then \
         PW_SPEC="playwright==${PLAYWRIGHT_VERSION}"; \
@@ -51,7 +51,7 @@ RUN python3 -m pip install --upgrade pip --user && \
     fi && \
     python3 -m pip install -U "$CF_SPEC" "$PW_SPEC" --user
 
-# Pre-descargar el binario de Camoufox (queda cacheado en la imagen)
+# Pre-fetch the Camoufox binary (cached in the image layer)
 RUN python3 -m camoufox fetch
 
 WORKDIR /app

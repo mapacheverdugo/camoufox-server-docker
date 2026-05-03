@@ -31,9 +31,14 @@ def main() -> None:
     ws_path = _env("WS_PATH") or "/"
     geoip = (_env("GEOIP") or "true").lower() in ("1", "true", "yes")
     humanize = (_env("HUMANIZE") or "true").lower() in ("1", "true", "yes")
+    # When the virtual display is disabled there is no X server available,
+    # so Camoufox must run headless.
+    xvfb_enabled = (_env("ENABLE_XVFB") or "true").lower() in ("1", "true", "yes", "on")
+    headless = not xvfb_enabled
 
-    print(f"camoufox-server starting on :{port}{ws_path} at {time.time()}")
+    print(f"camoufox-server starting on :{port}{ws_path} (headless={headless}) at {time.time()}")
     launch_server(
+        headless=headless,
         geoip=geoip,
         humanize=humanize,
         proxy=proxy,

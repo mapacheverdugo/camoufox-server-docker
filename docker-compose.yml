@@ -1,21 +1,28 @@
 services:
   camoufox-server:
-    image: ghcr.io/mapacheverdugo/camoufox-server:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PLAYWRIGHT_VERSION: "${PLAYWRIGHT_VERSION:-}"
+        CAMOUFOX_VERSION: "${CAMOUFOX_VERSION:-}"
+    image: camoufox-server:local
     container_name: camoufox-server
     ports:
       - "${EXPOSED_PORT:-1234}:${PORT:-1234}"
     environment:
-      # Display virtual (Xvfb)
+      # Virtual display (Xvfb). Set ENABLE_XVFB=false to run headless.
+      ENABLE_XVFB: "${ENABLE_XVFB:-true}"
       DISPLAY: ":99"
       SCREEN_WIDTH: "${SCREEN_WIDTH:-1280}"
       SCREEN_HEIGHT: "${SCREEN_HEIGHT:-720}"
       SCREEN_DEPTH: "${SCREEN_DEPTH:-16}"
-      # Servidor Camoufox
+      # Camoufox server
       PORT: "${PORT:-1234}"
       WS_PATH: "${WS_PATH:-/}"
       GEOIP: "${GEOIP:-true}"
       HUMANIZE: "${HUMANIZE:-true}"
-      # Proxy upstream opcional
+      # Optional upstream proxy
       PROXY_SERVER: "${PROXY_SERVER:-}"
       PROXY_USERNAME: "${PROXY_USERNAME:-}"
       PROXY_PASSWORD: "${PROXY_PASSWORD:-}"
