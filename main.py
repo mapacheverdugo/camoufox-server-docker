@@ -1,40 +1,46 @@
-import time
-print(f"MAIN.PY START: {time.time()}")
-from camoufox.server import launch_server
 import os
+import time
+
+from camoufox.server import launch_server
 
 
-def main():
-    proxy_server = None
-    proxy_username = None
-    proxy_password = None
+def _env(name: str) -> str | None:
+    value = os.environ.get(name)
+    if value is None or value.strip() == "":
+        return None
+    return value
 
-    if 'PROXY_SERVER' in os.environ:
-        proxy_server = os.environ.get('PROXY_SERVER')
 
-    if 'PROXY_USERNAME' in os.environ:
-        proxy_username = os.environ.get('PROXY_USERNAME')
-    
-    if 'PROXY_PASSWORD' in os.environ:
-        proxy_password = os.environ.get('PROXY_PASSWORD')
+def main() -> None:
+    proxy_server = _env("PROXY_SERVER")
+    proxy_username = _env("PROXY_USERNAME")
+    proxy_password = _env("PROXY_PASSWORD")
 
-    if (proxy_server and proxy_username and proxy_password):
+    if proxy_server and proxy_username and proxy_password:
         proxy = {
-            'server': proxy_server,
-            'username': proxy_username,
-            'password': proxy_password
+            "server": proxy_server,
+            "username": proxy_username,
+            "password": proxy_password,
         }
+    elif proxy_server:
+        proxy = {"server": proxy_server}
     else:
         proxy = None
 
-    print(f"MAIN.PY LAUNCH SERVER: {time.time()}")
+    port = int(_env("PORT") or "1234")
+    ws_path = _env("WS_PATH") or "/"
+    geoip = (_env("GEOIP") or "true").lower() in ("1", "true", "yes")
+    humanize = (_env("HUMANIZE") or "true").lower() in ("1", "true", "yes")
+
+    print(f"camoufox-server starting on :{port}{ws_path} at {time.time()}")
     launch_server(
-        geoip=True,
-        humanize=True,
+        geoip=geoip,
+        humanize=humanize,
         proxy=proxy,
-        port=1234,
-        ws_path='/',
+        port=port,
+        ws_path=ws_path,
     )
+
 
 if __name__ == "__main__":
     main()

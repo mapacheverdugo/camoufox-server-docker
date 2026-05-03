@@ -6,14 +6,24 @@
 #
 FROM amazonlinux:2023
 
+<<<<<<< Updated upstream
 #
 # 2) Instalar dependencias del sistema como ROOT
 #
+=======
+# Build args - pueden sobreescribirse con --build-arg
+# Si están vacíos se instala la última versión disponible.
+ARG PLAYWRIGHT_VERSION=
+ARG CAMOUFOX_VERSION=
+
+# Dependencias del sistema necesarias para Camoufox/Playwright + Xvfb
+>>>>>>> Stashed changes
 RUN dnf update -y && dnf install -y \
     python3.12 \
     python3.12-pip \
     python3.12-devel \
     xorg-x11-server-Xvfb \
+    procps-ng \
     gtk3 \
     libX11 \
     libXcomposite \
@@ -26,14 +36,20 @@ RUN dnf update -y && dnf install -y \
     alsa-lib \
     pango \
     cups-libs \
+<<<<<<< Updated upstream
     amazon-efs-utils \
     socat \
     && dnf clean all
+=======
+    && dnf clean all \
+    && rm -rf /var/cache/dnf
+>>>>>>> Stashed changes
 
-# Crear symlinks para python
+# Symlinks para que `python3` y `pip3` apunten a 3.12
 RUN ln -sf /usr/bin/python3.12 /usr/bin/python3 && \
     ln -sf /usr/bin/pip3.12 /usr/bin/pip3
 
+<<<<<<< Updated upstream
 #
 # 3) Instalar paquetes de Python y descargar datos como ROOT
 #
@@ -111,22 +127,44 @@ RUN ln -sf /usr/bin/python3.12 /usr/bin/python3 && \
 RUN useradd -m -s /bin/bash appuser
 
 # Cambiar al usuario no-root
+=======
+# Usuario no-root
+RUN useradd -m -s /bin/bash appuser
+>>>>>>> Stashed changes
 USER appuser
 
 # --- ¡CAMBIO CLAVE! ---
 # Añadimos el directorio local del usuario al PATH del sistema.
 ENV PATH="/home/appuser/.local/bin:${PATH}"
 
+<<<<<<< Updated upstream
 #
 # 4) Instalar paquetes de Python y descargar datos como 'appuser'
 #
 # Actualizamos pip e instalamos los paquetes con el flag --user.
 # Esto los instala en el directorio home del usuario, evitando problemas de permisos.
+=======
+# Instalar paquetes Python. Si las versiones están vacías se usa la última.
+>>>>>>> Stashed changes
 RUN python3 -m pip install --upgrade pip --user && \
-    python3 -m pip install -U camoufox[geoip] "playwright==1.52.0" --user
+    if [ -n "$PLAYWRIGHT_VERSION" ]; then \
+        PW_SPEC="playwright==${PLAYWRIGHT_VERSION}"; \
+    else \
+        PW_SPEC="playwright"; \
+    fi && \
+    if [ -n "$CAMOUFOX_VERSION" ]; then \
+        CF_SPEC="camoufox[geoip]==${CAMOUFOX_VERSION}"; \
+    else \
+        CF_SPEC="camoufox[geoip]"; \
+    fi && \
+    python3 -m pip install -U "$CF_SPEC" "$PW_SPEC" --user
 
+<<<<<<< Updated upstream
 # Ahora, ejecutamos el fetch como 'appuser'. Los datos se guardarán en el
 # directorio home del usuario, donde tiene plenos permisos.
+=======
+# Pre-descargar el binario de Camoufox (queda en cache de la imagen)
+>>>>>>> Stashed changes
 RUN python3 -m camoufox fetch
 
 #
@@ -137,7 +175,12 @@ COPY --chown=appuser:appuser main.py .
 COPY --chown=appuser:appuser entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
-ENV DISPLAY=:99
+ENV DISPLAY=:99 \
+    SCREEN_WIDTH=1280 \
+    SCREEN_HEIGHT=720 \
+    SCREEN_DEPTH=16 \
+    PORT=1234
+
 EXPOSE 1234
 
 ENTRYPOINT ["./entrypoint.sh"]

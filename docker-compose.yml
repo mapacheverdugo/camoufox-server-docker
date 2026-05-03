@@ -1,6 +1,7 @@
 version: "3.8"
 
 services:
+<<<<<<< Updated upstream
   project-pan:
     build:
       context: .
@@ -13,23 +14,56 @@ services:
       - PROXY_USERNAME=${PROXY_USERNAME:-} # Optional proxy username
       - PROXY_PASSWORD=${PROXY_PASSWORD:-} # Optional proxy password
     # Ensure the container has enough resources for browser automation
+=======
+  camoufox-server:
+    image: ghcr.io/mapacheverdugo/camoufox-server:latest
+    container_name: camoufox-server
+    ports:
+      - "${EXPOSED_PORT:-1234}:${PORT:-1234}"
+    environment:
+      # Display virtual (Xvfb)
+      DISPLAY: ":99"
+      SCREEN_WIDTH: "${SCREEN_WIDTH:-1280}"
+      SCREEN_HEIGHT: "${SCREEN_HEIGHT:-720}"
+      SCREEN_DEPTH: "${SCREEN_DEPTH:-16}"
+      # Servidor Camoufox
+      PORT: "${PORT:-1234}"
+      WS_PATH: "${WS_PATH:-/}"
+      GEOIP: "${GEOIP:-true}"
+      HUMANIZE: "${HUMANIZE:-true}"
+      # Proxy upstream opcional
+      PROXY_SERVER: "${PROXY_SERVER:-}"
+      PROXY_USERNAME: "${PROXY_USERNAME:-}"
+      PROXY_PASSWORD: "${PROXY_PASSWORD:-}"
+>>>>>>> Stashed changes
     deploy:
       resources:
         limits:
-          memory: 2G
+          memory: ${MEM_LIMIT:-2G}
         reservations:
+<<<<<<< Updated upstream
           memory: 1G
     # Restart policy in case of failures
+=======
+          memory: ${MEM_RESERVATION:-1G}
+>>>>>>> Stashed changes
     restart: unless-stopped
     # Health check to ensure the service is running
     healthcheck:
       test:
+<<<<<<< Updated upstream
         [
           "CMD",
           "python3",
           "-c",
           "import socket; socket.socket().connect(('localhost', 1234))",
         ]
+=======
+        - "CMD"
+        - "python3"
+        - "-c"
+        - "import os, socket; socket.socket().connect(('localhost', int(os.environ.get('PORT','1234'))))"
+>>>>>>> Stashed changes
       interval: 30s
       timeout: 10s
       retries: 3
