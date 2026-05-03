@@ -25,7 +25,7 @@ Because the compose file uses `build:` (no pre-built image is pulled), Portainer
 2. Pick the **Repository** method and point it at this repo (`main` branch).
 3. Leave `docker-compose.yml` as the Compose path.
 4. Under **Environment variables** add the ones you need from [`.env.example`](./.env.example). The most common to tweak:
-   - `EXPOSED_PORT` — host port where the service will be exposed on TrueNAS.
+   - `PORT` — host port where the service will be exposed on TrueNAS.
    - `PROXY_SERVER`, `PROXY_USERNAME`, `PROXY_PASSWORD` — optional upstream proxy.
    - `PLAYWRIGHT_VERSION` / `CAMOUFOX_VERSION` — optional, empty = latest.
 5. **Deploy the stack**. Portainer will build the image on the host.
@@ -52,8 +52,7 @@ All variables are optional — defaults are shown in parentheses.
 
 | Variable        | Default | Description                                                              |
 | --------------- | ------- | ------------------------------------------------------------------------ |
-| `EXPOSED_PORT`  | `1234`  | Port published on the host. Only consumed by `docker-compose.yml`.       |
-| `PORT`          | `1234`  | Internal port Camoufox listens on inside the container.                  |
+| `PORT`          | `1234`  | Port the service is exposed on (host side). Camoufox always listens on `1234` inside the container. |
 | `WS_PATH`       | `/`     | Path of the WebSocket endpoint.                                          |
 | `GEOIP`         | `true`  | Enable Camoufox's GeoIP database (requires the `[geoip]` extra).         |
 | `HUMANIZE`      | `true`  | Enable Camoufox's humanized behavior.                                    |

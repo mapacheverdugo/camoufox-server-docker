@@ -31,6 +31,10 @@ RUN dnf update -y && dnf install -y \
 RUN ln -sf /usr/bin/python3.12 /usr/bin/python3 && \
     ln -sf /usr/bin/pip3.12 /usr/bin/pip3
 
+# Pre-create the X11 socket directory with the canonical permissions
+# (root-owned, sticky, 1777) so Xvfb does not warn about wrong ownership.
+RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
+
 # Non-root user
 RUN useradd -m -s /bin/bash appuser
 USER appuser
@@ -62,8 +66,7 @@ RUN chmod +x entrypoint.sh
 ENV DISPLAY=:99 \
     SCREEN_WIDTH=1280 \
     SCREEN_HEIGHT=720 \
-    SCREEN_DEPTH=16 \
-    PORT=1234
+    SCREEN_DEPTH=16
 
 EXPOSE 1234
 

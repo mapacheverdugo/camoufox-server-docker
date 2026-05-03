@@ -3,6 +3,8 @@ import time
 
 from camoufox.server import launch_server
 
+INTERNAL_PORT = 1234
+
 
 def _env(name: str) -> str | None:
     value = os.environ.get(name)
@@ -16,6 +18,7 @@ def main() -> None:
     proxy_username = _env("PROXY_USERNAME")
     proxy_password = _env("PROXY_PASSWORD")
 
+    proxy: dict | None
     if proxy_server and proxy_username and proxy_password:
         proxy = {
             "server": proxy_server,
@@ -27,7 +30,6 @@ def main() -> None:
     else:
         proxy = None
 
-    port = int(_env("PORT") or "1234")
     ws_path = _env("WS_PATH") or "/"
     geoip = (_env("GEOIP") or "true").lower() in ("1", "true", "yes")
     humanize = (_env("HUMANIZE") or "true").lower() in ("1", "true", "yes")
@@ -36,15 +38,23 @@ def main() -> None:
     xvfb_enabled = (_env("ENABLE_XVFB") or "true").lower() in ("1", "true", "yes", "on")
     headless = not xvfb_enabled
 
-    print(f"camoufox-server starting on :{port}{ws_path} (headless={headless}) at {time.time()}")
-    launch_server(
-        headless=headless,
-        geoip=geoip,
-        humanize=humanize,
-        proxy=proxy,
-        port=port,
-        ws_path=ws_path,
+    # Build kwargs and only include `proxy` when configured — Camoufox
+    # rejects proxy=None ("proxy: expected object, got null").
+    kwargs: dict = {
+        "headless": headless,
+        "geoip": geoip,
+        "humanize": humanize,
+        "port": INTERNAL_PORT,
+        "ws_path": ws_path,
+    }
+    if proxy is not None:
+        kwargs["proxy"] = proxy
+
+    print(
+        f"camoufox-server starting on :{INTERNAL_PORT}{ws_path} "
+        f"(headless={headless}, proxy={'on' if proxy else 'off'}) at {time.time()}"
     )
+    launch_server(**kwargs)
 
 
 if __name__ == "__main__":

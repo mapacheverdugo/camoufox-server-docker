@@ -9,7 +9,8 @@ services:
     image: camoufox-server:local
     container_name: camoufox-server
     ports:
-      - "${EXPOSED_PORT:-1234}:${PORT:-1234}"
+      # Host -> container. Camoufox always listens on 1234 inside the container.
+      - "${PORT:-1234}:1234"
     environment:
       # Virtual display (Xvfb). Set ENABLE_XVFB=false to run headless.
       ENABLE_XVFB: "${ENABLE_XVFB:-true}"
@@ -18,7 +19,6 @@ services:
       SCREEN_HEIGHT: "${SCREEN_HEIGHT:-720}"
       SCREEN_DEPTH: "${SCREEN_DEPTH:-16}"
       # Camoufox server
-      PORT: "${PORT:-1234}"
       WS_PATH: "${WS_PATH:-/}"
       GEOIP: "${GEOIP:-true}"
       HUMANIZE: "${HUMANIZE:-true}"
@@ -38,7 +38,7 @@ services:
         - "CMD"
         - "python3"
         - "-c"
-        - "import os, socket; socket.socket().connect(('localhost', int(os.environ.get('PORT','1234'))))"
+        - "import socket; socket.socket().connect(('localhost', 1234))"
       interval: 30s
       timeout: 10s
       retries: 3
